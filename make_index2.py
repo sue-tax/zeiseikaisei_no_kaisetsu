@@ -67,9 +67,14 @@ class MakeIndex():
         #                         '参照頁 ?(\r\n|\n|\r)')
         self.p_dai = re.compile(r'(第[一二三四五六七八九]) ?　([^\r\n]+?)(\r\n|\n|\r)')
 
-        # 2 ％）,3 月31日まで 2 年延長されました。 の弊害あり
-        # self.p_suji = re.compile(r'([0-9０-９]+) ?[ 　]([^\r\n]+?)(\r\n|\n|\r)')
-        self.p_suji = re.compile(r'([0-9０-９]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
+        # self.p_suji = re.compile(r'([0-9０-９]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
+        # TODO 2 ％,3 月31 3 年12月31日 3 分の1以上の弊害あるが、2006対応
+        self.p_suji_2007e = re.compile(r'([0-9０-９]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
+        self.p_suji_2006 = re.compile(r'([0-9０-９]+) ?[ 　]([^\r\n]+?)(\r\n|\n|\r)')
+        self.pos_suji = 2
+        # self.p_suji = re.compile(r'([0-9０-９]+) ?[ 　](?!(％|月31日))([^\r\n]+?)(\r\n|\n|\r)')
+        # self.pos_suji = 3
+        
         self.p_kakko = re.compile(r'([⑴-⒇]) ?[ 　]([^\r\n]+?)(\r\n|\n|\r)')
         self.p_maru = re.compile(r'([①-⑳]) ?[ 　]([^\r\n]+?)(\r\n|\n|\r)')
         
@@ -246,6 +251,10 @@ class MakeIndex():
         f_text.close()
         # print(in_text)
         
+        if int(self.str_seireki) == 2006:
+            self.p_suji = self.p_suji_2006
+        else:
+            self.p_suji = self.p_suji_2007e
         for m_low in self.p_low.finditer(str_text):
             # print(m_low)
             # num_low = m_low.group(1)
@@ -307,7 +316,8 @@ class MakeIndex():
                     # print("A", num_page, before_page, m_suji)
                     offset = m_suji.end()
                     num_suji = m_suji.group(1).translate(self.trans_zenhan)
-                    str_suji = m_suji.group(2)
+                    # print(m_suji.groups())
+                    str_suji = m_suji.group(self.pos_suji)
                     # before_page = ''
                     m_page = self.p_page.match(str_text, offset)
                     if m_page == None:
@@ -683,9 +693,9 @@ class MakeIndex():
                     "H18_2006/f1808betu.pdf"
             self.ws.cell(column=13, row=self.ws_row).hyperlink = link_data
             str_foxid = "H18_2006/f1808betu.pdf"
+        # foxit reader
         # self.ws.cell(column=14, row=self.ws_row).value = str_foxid
         # self.ws.cell(column=15, row=self.ws_row).value = int_page
-        # foxit reader
         '''
         Sub linkpdfpage()
             Worksheets("Sheet").Activate
