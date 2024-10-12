@@ -6,6 +6,9 @@ pdf_PDF2text
 を参考にしている
 """
 
+# TODO mdファイル
+# TODO 項目名を本文から？　そこまで有用ではないかも？
+
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LAParams, LTTextBox
 import collections
@@ -13,7 +16,7 @@ import os, sys, argparse, glob
 
 import re
 import openpyxl
-
+from openpyxl.styles.alignment import Alignment
 
 class MakeIndex():
     """
@@ -88,6 +91,7 @@ class MakeIndex():
         # self.trans_2006_kakko = str.maketrans('盧盪蘯盻眈眇眄眩眤眞眥眛眷眸睇睚睨睫睛睥睿',
         self.trans_2006_kakko = str.maketrans('盧盪蘯盻眈眇眄眩眤眞眥眛眷眸睇睚睨睫睛睥',
                 '⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇')
+        #                                                (21)がない
         self.trans_2007_kakko = str.maketrans('asdfghjklmnopqrtuvwx',
                 '⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇')
 
@@ -323,11 +327,32 @@ class MakeIndex():
                     if m_page == None:
                         num_page = before_page
                         if num_page != '':
+                            # v0.03
+                            str_koumoku = str_suji + '\n'
+                            while True:
+                                m_maru = self.p_maru.match(str_text, offset)
+                                m_kakko = self.p_kakko.match(str_text, offset)
+                                m_suji = self.p_suji.match(str_text, offset)
+                                m_dai = self.p_dai.match(str_text, offset)
+                                m_low = self.p_low.match(str_text, offset)
+                                m_page = self.p_page.match(str_text, offset)
+                                if m_maru or m_kakko or \
+                                        m_suji or m_dai or \
+                                        m_low or m_page:
+                                    break
+                                m_through = self.p_through.match(str_text, offset)
+                                if m_through == None:
+                                    break
+                                str_koumoku += \
+                                        m_through.group(0)
+                                # print(str_koumoku)
+                                offset = m_through.end()
+                            str_suji = str_koumoku[:-1]
                             data_tuple = (self.str_wareki, self.str_seireki,
                                     str_low, num_dai, str_dai,
                                     num_suji, str_suji,
-                                    '', '',
-                                    '', '',
+                                    ' ', '',
+                                    ' ', '',
                                     num_page)
                             self.write_excel(data_tuple)
                             # print("☆", data_tuple)
@@ -336,11 +361,32 @@ class MakeIndex():
                         # print(m_page.group(1))
                         offset = m_page.end()
                         num_page = m_page.group(1).translate(self.trans_zenhan)
+                        # v0.03
+                        str_koumoku = str_suji + '\n'
+                        while True:
+                            m_maru = self.p_maru.match(str_text, offset)
+                            m_kakko = self.p_kakko.match(str_text, offset)
+                            m_suji = self.p_suji.match(str_text, offset)
+                            m_dai = self.p_dai.match(str_text, offset)
+                            m_low = self.p_low.match(str_text, offset)
+                            m_page = self.p_page.match(str_text, offset)
+                            if m_maru or m_kakko or \
+                                    m_suji or m_dai or \
+                                    m_low or m_page:
+                                break
+                            m_through = self.p_through.match(str_text, offset)
+                            if m_through == None:
+                                break
+                            str_koumoku += \
+                                    m_through.group(0)
+                            # print(str_koumoku)
+                            offset = m_through.end()
+                        str_suji = str_koumoku[:-1]
                         data_tuple = (self.str_wareki, self.str_seireki,
                                 str_low, num_dai, str_dai,
                                 num_suji, str_suji,
-                                '', '',
-                                '', '',
+                                ' ', '',
+                                ' ', '',
                                 num_page)
                         # print(data_tuple)
                         self.write_excel(data_tuple)
@@ -388,11 +434,33 @@ class MakeIndex():
                             if m_page == None:
                                 num_page = before_page
                                 if num_page != '':
+                                    # v0.03
+                                    str_koumoku = str_kakko + '\n'
+                                    while True:
+                                        m_maru = self.p_maru.match(str_text, offset)
+                                        m_kakko = self.p_kakko.match(str_text, offset)
+                                        m_suji = self.p_suji.match(str_text, offset)
+                                        m_dai = self.p_dai.match(str_text, offset)
+                                        m_low = self.p_low.match(str_text, offset)
+                                        m_page = self.p_page.match(str_text, offset)
+                                        if m_maru or m_kakko or \
+                                                m_suji or m_dai or \
+                                                m_low or m_page:
+                                            break
+                                        m_through = self.p_through.match(str_text, offset)
+                                        if m_through == None:
+                                            break
+                                        str_koumoku += \
+                                                m_through.group(0)
+                                        # print(str_koumoku)
+                                        offset = m_through.end()
+                                    str_kakko = str_koumoku[:-1]
+                                    # print("b0", str_koumoku)
                                     data_tuple = (self.str_wareki, self.str_seireki,
                                             str_low, num_dai, str_dai,
                                             num_suji, str_suji,
                                             num_kakko, str_kakko,
-                                            '', '',
+                                            ' ', '',
                                             num_page)
                                     self.write_excel(data_tuple)
                                     # print("☆", data_tuple)
@@ -401,11 +469,32 @@ class MakeIndex():
                                 # print(m_page.group(1))
                                 offset = m_page.end()
                                 num_page = m_page.group(1).translate(self.trans_zenhan)
+                                # v0.03
+                                str_koumoku = str_kakko + '\n'
+                                while True:
+                                    m_maru = self.p_maru.match(str_text, offset)
+                                    m_kakko = self.p_kakko.match(str_text, offset)
+                                    m_suji = self.p_suji.match(str_text, offset)
+                                    m_dai = self.p_dai.match(str_text, offset)
+                                    m_low = self.p_low.match(str_text, offset)
+                                    m_page = self.p_page.match(str_text, offset)
+                                    if m_maru or m_kakko or \
+                                            m_suji or m_dai or \
+                                            m_low or m_page:
+                                        break
+                                    m_through = self.p_through.match(str_text, offset)
+                                    if m_through == None:
+                                        break
+                                    str_koumoku += \
+                                            m_through.group(0)
+                                    # print(str_koumoku)
+                                    offset = m_through.end()
+                                str_kakko = str_koumoku[:-1]
                                 data_tuple = (self.str_wareki, self.str_seireki,
                                         str_low, num_dai, str_dai,
                                         num_suji, str_suji,
                                         num_kakko, str_kakko,
-                                        '', '',
+                                        ' ', '',
                                         num_page)
                                 self.write_excel(data_tuple)
                                 # print("☆", data_tuple)
@@ -421,7 +510,6 @@ class MakeIndex():
                                     offset = m_page.end()
                                     num_page = m_page.group(1).translate(self.trans_zenhan)
                                     m_maru = self.p_maru.match(str_text, offset)
-                                    # test
                                     before_page = num_page
                                     continue
                                 m_kakko = self.p_kakko.match(str_text, offset)
@@ -447,6 +535,27 @@ class MakeIndex():
                                 if m_page == None:
                                     num_page = before_page
                                     if num_page != '':
+                                        # v0.03
+                                        str_koumoku = str_maru + '\n'
+                                        while True:
+                                            m_maru = self.p_maru.match(str_text, offset)
+                                            m_kakko = self.p_kakko.match(str_text, offset)
+                                            m_suji = self.p_suji.match(str_text, offset)
+                                            m_dai = self.p_dai.match(str_text, offset)
+                                            m_low = self.p_low.match(str_text, offset)
+                                            m_page = self.p_page.match(str_text, offset)
+                                            if m_maru or m_kakko or \
+                                                    m_suji or m_dai or \
+                                                    m_low or m_page:
+                                                break
+                                            m_through = self.p_through.match(str_text, offset)
+                                            if m_through == None:
+                                                break
+                                            str_koumoku += \
+                                                    m_through.group(0)
+                                            # print(str_koumoku)
+                                            offset = m_through.end()
+                                        str_maru = str_koumoku[:-1]
                                         data_tuple = (self.str_wareki, self.str_seireki,
                                                 str_low, num_dai, str_dai,
                                                 num_suji, str_suji,
@@ -459,7 +568,29 @@ class MakeIndex():
                                 else:
                                     # print(m_page.group(1))
                                     offset = m_page.end()
-                                    num_page = m_page.group(1).translate(self.trans_zenhan)
+                                    num_page = m_page.group(1). \
+                                            translate(self.trans_zenhan)
+                                    # v0.03
+                                    str_koumoku = str_maru + '\n'
+                                    while True:
+                                        m_maru = self.p_maru.match(str_text, offset)
+                                        m_kakko = self.p_kakko.match(str_text, offset)
+                                        m_suji = self.p_suji.match(str_text, offset)
+                                        m_dai = self.p_dai.match(str_text, offset)
+                                        m_low = self.p_low.match(str_text, offset)
+                                        m_page = self.p_page.match(str_text, offset)
+                                        if m_maru or m_kakko or \
+                                                m_suji or m_dai or \
+                                                m_low or m_page:
+                                            break
+                                        m_through = self.p_through.match(str_text, offset)
+                                        if m_through == None:
+                                            break
+                                        str_koumoku += \
+                                                m_through.group(0)
+                                        # print(str_koumoku)
+                                        offset = m_through.end()
+                                    str_maru = str_koumoku[:-1]
                                     data_tuple = (self.str_wareki, self.str_seireki,
                                             str_low, num_dai, str_dai,
                                             num_suji, str_suji,
@@ -551,7 +682,7 @@ class MakeIndex():
                             #     before_page = ''
                     else:
                         # カッコ数字がなく、丸数字
-                        num_kakko = ''
+                        num_kakko = ' '
                         str_kakko = ''
                         while m_maru:
                             # print("c0", m_maru)
@@ -563,6 +694,27 @@ class MakeIndex():
                             if m_page == None:
                                 num_page = before_page
                                 if num_page != '':
+                                    # v0.03
+                                    str_koumoku = str_maru + '\n'
+                                    while True:
+                                        m_maru = self.p_maru.match(str_text, offset)
+                                        m_kakko = self.p_kakko.match(str_text, offset)
+                                        m_suji = self.p_suji.match(str_text, offset)
+                                        m_dai = self.p_dai.match(str_text, offset)
+                                        m_low = self.p_low.match(str_text, offset)
+                                        m_page = self.p_page.match(str_text, offset)
+                                        if m_maru or m_kakko or \
+                                                m_suji or m_dai or \
+                                                m_low or m_page:
+                                            break
+                                        m_through = self.p_through.match(str_text, offset)
+                                        if m_through == None:
+                                            break
+                                        str_koumoku += \
+                                                m_through.group(0)
+                                        # print(str_koumoku)
+                                        offset = m_through.end()
+                                    str_maru = str_koumoku[:-1]
                                     data_tuple = (self.str_wareki, self.str_seireki,
                                             str_low, num_dai, str_dai,
                                             num_suji, str_suji,
@@ -576,6 +728,27 @@ class MakeIndex():
                                 # print(m_page.group(1))
                                 offset = m_page.end()
                                 num_page = m_page.group(1).translate(self.trans_zenhan)
+                                # v0.03
+                                str_koumoku = str_maru + '\n'
+                                while True:
+                                    m_maru = self.p_maru.match(str_text, offset)
+                                    m_kakko = self.p_kakko.match(str_text, offset)
+                                    m_suji = self.p_suji.match(str_text, offset)
+                                    m_dai = self.p_dai.match(str_text, offset)
+                                    m_low = self.p_low.match(str_text, offset)
+                                    m_page = self.p_page.match(str_text, offset)
+                                    if m_maru or m_kakko or \
+                                            m_suji or m_dai or \
+                                            m_low or m_page:
+                                        break
+                                    m_through = self.p_through.match(str_text, offset)
+                                    if m_through == None:
+                                        break
+                                    str_koumoku += \
+                                            m_through.group(0)
+                                    # print(str_koumoku)
+                                    offset = m_through.end()
+                                str_maru = str_koumoku[:-1]
                                 data_tuple = (self.str_wareki, self.str_seireki,
                                         str_low, num_dai, str_dai,
                                         num_suji, str_suji,
@@ -666,7 +839,18 @@ class MakeIndex():
     def write_excel(self, data_tuple):
         num_page = data_tuple[11]
         # print(data_tuple)
-        self.ws.append(data_tuple)
+        try:
+            self.ws.append(data_tuple)
+        except:
+            index = data_tuple[8].find('\x1a')
+            if index == -1:
+                for c in data_tuple[8]:
+                    print(hex(ord(c)))
+                print(data_tuple[8])
+                exit(99)
+            data_list = list(data_tuple)
+            data_list[8] = data_list[8][:index]
+            data_tuple = tuple(data_list)
         if int(self.str_seireki) != 2006:
             # print(self.str_seireki)
             # print(num_page)
@@ -693,16 +877,20 @@ class MakeIndex():
                     "H18_2006/f1808betu.pdf"
             self.ws.cell(column=13, row=self.ws_row).hyperlink = link_data
             str_foxid = "H18_2006/f1808betu.pdf"
+        # self.ws['G'+str(self.ws_row)].alignment = Alignment(vertical="top", wrapText=True)
+        # self.ws['I'+str(self.ws_row)].alignment = Alignment(vertical="top", wrapText=True)
+        # self.ws['K'+str(self.ws_row)].alignment = Alignment(vertical="top", wrapText=True)
+        # self.ws.row_dimensions[self.ws_row].heigth = 216
         # foxit reader
         # self.ws.cell(column=14, row=self.ws_row).value = str_foxid
         # self.ws.cell(column=15, row=self.ws_row).value = int_page
-        '''
+        """
         Sub linkpdfpage()
             Worksheets("Sheet").Activate
             Text = "C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\FoxitPDFReader.exe /A page=" + Mid(Cells(Selection(1).Row, 15).Value, 1) + " " + ActiveWorkbook.Path + "/" + Cells(Selection(1).Row, 14).Value
             Shell (Text)
         End Sub
-        '''
+        """
         self.ws_row += 1
 
     def make_each_pdf_to_text(self, in_file, out_file):
