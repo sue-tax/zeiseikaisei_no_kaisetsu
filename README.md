@@ -45,6 +45,10 @@ H17_R7_税制改正の解説.xlsx  平成~~１８~~１７年～令和７年
   
 　そのフォルダに、「p0117-0316.pdf」などの各pdfファイルを保存します。
 
+マクロの実行がブロックされる場合は、下記などを参考にしてください。
+
+https://support.microsoft.com/ja-jp/topic/%E6%BD%9C%E5%9C%A8%E7%9A%84%E3%81%AB%E5%8D%B1%E9%99%BA%E3%81%AA%E3%83%9E%E3%82%AF%E3%83%AD%E3%81%8C%E3%83%96%E3%83%AD%E3%83%83%E3%82%AF%E3%81%95%E3%82%8C%E3%81%BE%E3%81%97%E3%81%9F-0952faa0-37e7-4316-b61d-5b5ed6024216
+
 ## 内容
 
 各年度の「税制改正の概要」（令和６年度なら[令和 6 年度税制改正の概要](https://www.mof.go.jp/tax_policy/tax_reform/outline/fy2024/explanation/PDF/p0009-0088.pdf)）を元に、データを作っています。
