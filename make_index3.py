@@ -6,15 +6,6 @@ pdf_PDF2text
 を参考にしている
 """
 
-# TODO mdファイル
-# TODO 項目名を本文から？　そこまで有用ではないかも？
-
-# TODO
-# 第一、第二　と　１、２　の間の
-# 一、二　にも対応する
-# 例えば、令和６年　国定通則法
-
-
 import c
 import d
 import e
@@ -36,7 +27,7 @@ import openpyxl
 from openpyxl.styles.alignment import Alignment
 
 
-__version__ = 0.10
+__version__ = 0.11  # 検索用の全項目の列を追加
 
 
 class MakeIndex():
@@ -63,7 +54,6 @@ class MakeIndex():
         parser.add_argument('base_folder', type=str, help="ベースフォルダ名")	# 引数定義
                 
         args = parser.parse_args(argv)				# 引数の解析
-        # print(args)						# 引数の参照
         self.base_folder = args.base_folder
         
         self.p_dir = re.compile('([A-Z][0-9]{2})_([0-9]{4})')
@@ -164,7 +154,6 @@ class MakeIndex():
             else:
                 return None
         elif ord(self.str_text[m_mae.end()]) == 0x00e8e3:
-            # d.dprint(format(ord(self.str_text[m_mae.end()]), '#08x'))
             if (0x00e7e8 <= ord(self.str_text[m_mae.end()+1])) \
                     and (ord(self.str_text[m_mae.end()+1]) <= 0x00e7ec):
                 m_ushiro = self.p_kakko_ushiro.match(self.str_text,
@@ -243,6 +232,9 @@ class MakeIndex():
                     if 2021 <= int(self.str_seireki) <= 2021:
                         str_link = r'https://warp.da.ndl.go.jp/info:ndljp/pid/11719722/www.mof.go.jp/tax_policy/tax_reform/outline/fy' + \
                             self.str_seireki + r'/explanation/' + file_name
+                    if 2022 <= int(self.str_seireki) <= 2022:
+                        str_link = r'https://warp.ndl.go.jp/web/20230901113105/www.mof.go.jp/tax_policy/tax_reform/outline/fy' +\
+                            self.str_seireki + r'/explanation/PDF/' + file_name
                     str_file = './' + self.str_wareki+'_' + \
                             self.str_seireki + '/' + file_name
                     self.dict_file[i] = (file, num_min, num_max,
@@ -276,6 +268,7 @@ class MakeIndex():
                 '数字', '項目',
                 'カッコ', '項目',
                 '丸数字', '項目',
+                '全項目',
                 '頁', 'リンク'
                 ))
         self.ws_row = 2
@@ -320,7 +313,7 @@ class MakeIndex():
                 self.make_each_pdf_to_text(str_dir + "1-2.pdf", out_text)
                 self.make_each_text_to_index(out_text)
 
-        str_filter = "A1:M" + str(self.ws_row - 1)
+        str_filter = "A1:N" + str(self.ws_row - 1)
         self.ws.auto_filter.ref = str_filter
         self.ws.freeze_panes = 'D2'
         self.ws.column_dimensions['A'].width = 4.5
@@ -336,11 +329,11 @@ class MakeIndex():
         self.ws.column_dimensions['K'].width = 65
         self.ws.column_dimensions['L'].width = 3.25
         self.ws.column_dimensions['M'].width = 65
-        self.ws.column_dimensions['N'].width = 4.5
-        self.ws.column_dimensions['O'].width = 25
+        self.ws.column_dimensions['N'].width = 65
+        self.ws.column_dimensions['O'].width = 4.5
+        self.ws.column_dimensions['P'].width = 25
         
         out_excel =  self.base_folder + '/' + '税制改正の解説' + '.xlsx'
-
         wb.save(out_excel)
 
      
@@ -456,13 +449,18 @@ class MakeIndex():
                     self.str_text, self.offset)
             if m_maru:
                 break
+            m_page = self.p_page.match(self.str_text, self.offset)
+            if m_page:
+                break
             m_through = self.p_through.match(self.str_text, self.offset)
             if not m_through:
                 # d.dprint(self.str_seireki)
                 # d.dprint(self.str_low)
                 # d.dprint(self.str_text[self.offset:self.offset+20])
                 break
-            list_koumoku.append('\n')
+            if m_through.group(0)[0] == '　':
+                break
+            # list_koumoku.append('\n')
             list_koumoku.append(m_through.group(0)[:-1])
             self.offset = m_through.end()
         return list_koumoku
@@ -537,7 +535,6 @@ class MakeIndex():
             self.write_excel(data_tuple)
     
     def replace_kakko(self, src):
-        # '⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇'
         dst = src \
                 .replace('⑴', '(1)') \
                 .replace('⑵', '(2)') \
@@ -643,6 +640,14 @@ class MakeIndex():
     
     def write_excel(self, data_tuple):
         num_page = data_tuple[11+2]
+        str_full = data_tuple[4] + \
+                data_tuple[6] + \
+                data_tuple[8] + \
+                data_tuple[10] + \
+                data_tuple[12]
+        data_list = list(data_tuple)
+        data_list.insert(13, str_full)
+        data_tuple = tuple(data_list)
         try:
             self.ws.append(data_tuple)
         except:
@@ -662,33 +667,33 @@ class MakeIndex():
             try:
                 int_page = int(num_page) - int(self.dict_file[int(num_page)][1]) + 1
                 link_data = self.dict_file[int(num_page)][3] + '#page=' + str(int_page)
-                self.ws.cell(column=13+2, row=self.ws_row).value = \
+                self.ws.cell(column=13+2+1, row=self.ws_row).value = \
                         self.dict_file[int(num_page)][4][2:]
-                self.ws.cell(column=13+2, row=self.ws_row).hyperlink = link_data
+                self.ws.cell(column=13+2+1, row=self.ws_row).hyperlink = link_data
                 str_foxid = self.dict_file[int(num_page)][4][2:]
             except Exception as _e:
                 int_page = int(num_page) + 1
-                self.ws.cell(column=13+2, row=self.ws_row).value = \
+                self.ws.cell(column=13+2+1, row=self.ws_row).value = \
                         "リンク設定不能"
                 str_foxid = "error"
         else:
             int_page = int(num_page) + 1
             link_data = "https://warp.da.ndl.go.jp/info:ndljp/pid/9551815/www.mof.go.jp/tax_policy/tax_reform/outline/fy2006/f1808betu.pdf" \
                     + '#page=' + str(int_page)
-            self.ws.cell(column=13+2, row=self.ws_row).value = \
+            self.ws.cell(column=13+2+1, row=self.ws_row).value = \
                     "H18_2006/f1808betu.pdf"
-            self.ws.cell(column=13+2, row=self.ws_row).hyperlink = link_data
+            self.ws.cell(column=13+2+1, row=self.ws_row).hyperlink = link_data
             str_foxid = "H18_2006/f1808betu.pdf"
         
         # foxit reader用は、下記の２行を有効にする
-        # self.ws.cell(column=14+2, row=self.ws_row).value = str_foxid
-        # self.ws.cell(column=15+2, row=self.ws_row).value = int_page
+        self.ws.cell(column=14+2+1, row=self.ws_row).value = str_foxid
+        self.ws.cell(column=15+2+1, row=self.ws_row).value = int_page
         # Excelファイルに下記のマクロを設定する
         #  ctlr+lに設定
         '''
         Sub linkpdfpage()
             Worksheets("Sheet").Activate
-            Text = "C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\FoxitPDFReader.exe /A page=" + Mid(Cells(Selection(1).Row, 17).Value, 1) + " " + ActiveWorkbook.Path + "/" + Cells(Selection(1).Row, 15).Value
+            Text = "C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\FoxitPDFReader.exe /A page=" + Mid(Cells(Selection(1).Row, 18).Value, 1) + " " + ActiveWorkbook.Path + "/" + Cells(Selection(1).Row, 17).Value
             Shell (Text)
         End Sub
         '''
@@ -716,24 +721,7 @@ class MakeIndex():
                     if '(cid:' in _text:
                         _text = re.sub(r"\(cid:([0-9]*)\)",
                                 lambda m: chr(ord('⑴')+int(m.group(1))-2), _text) 
-# １　平成21年及び平成22年に取得した土地等の長期譲渡所得の1,000万円特別
-#
-# 
-                    # s = ""
-                    # for t in _text[:8]:
-                    #     s = s+ '{:02X}'.format(ord(t))
-                    # d.dprint(s+ " : "+_text)
-                        
-                        
-                    # _text = _text.replace(chr(0x18), '？')
-                    # ページ数にずれが出ると思うが
-                    # if chr(0x18) in _text:
-                    #     d.dprint(_text)
-                    
-                    # _text = _text.replace(chr(0x18), '0')
                     _text = _text.replace(chr(0x18), '9')
-
-                    
                     _text = _text.replace(chr(0x07), '')
                     
                     # 太字のページ数
