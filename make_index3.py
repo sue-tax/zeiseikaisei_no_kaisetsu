@@ -27,7 +27,8 @@ import openpyxl
 from openpyxl.styles.alignment import Alignment
 
 
-__version__ = 0.11  # 検索用の全項目の列を追加
+# __version__ = 0.11  # 検索用の全項目の列を追加
+__version__ = 0.12  # 2026年国際課税関係の改正の例外処理を追加
 
 
 class MakeIndex():
@@ -69,19 +70,31 @@ class MakeIndex():
         '''
         self.p_filename = re.compile(r'.+?[pP]([0-9]+)[-_][pP]?([0-9]+)[^.]*\.pdf')
 
-        self.p_low = re.compile(r'((本　文 ?|詳[ 　]解 ?)(\r\n|\n|\r))?' \
+        self.p_low_2026e = re.compile(r'((本　文 ?|詳[ 　]解 ?)(\r\n|\n|\r))?' \
                                 '([^\r\n]+?)' \
                                 '(\r\n|\n|\r)?' \
                                 '(本　文 ?|詳[ 　]解 ?)?' \
                                 '(\r\n|\n|\r)' \
                                 '(参照頁|ページ) ?(\r\n|\n|\r)')
+
+        self.p_low_2026 = re.compile(r'((' \
+                                '((本　文 ?|詳[ 　]解 ?)(\r\n|\n|\r))?' \
+                                '([^\r\n]+?)' \
+                                '(\r\n|\n|\r)?' \
+                                '(本　文 ?|詳[ 　]解 ?)?' \
+                                '(\r\n|\n|\r)' \
+                                '(参照頁|ページ) ?' \
+                                ')|国際課税関係の改正)(\r\n|\n|\r)')
+
+        
         self.p_dai = re.compile(r'(第[一二三四五六七八九]) ?　([^\r\n]+?)(\r\n|\n|\r)')
 
         # ver0.04
         self.p_kansuji = re.compile(r'([一二三四五六七八九]) ?　([^\r\n]+?)(\r\n|\n|\r)')
         
         # TODO 2 ％,3 月31 3 年12月31日 3 分の1以上の弊害あるが、2006対応
-        self.p_suji_2007e = re.compile(r'([0-9０-９]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
+        self.p_suji_2007e = re.compile(r'([0-9０-９ⅠⅡⅢⅣⅤⅥⅦⅧⅨ]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
+        # self.p_suji_2007e = re.compile(r'([0-9０-９]+) ?　([^\r\n]+?)(\r\n|\n|\r)')
         self.p_suji_2006 = re.compile(r'([0-9０-９]+) ?[ 　]([^\r\n]+?)(\r\n|\n|\r)')
         self.pos_suji = 2
         
@@ -281,7 +294,7 @@ class MakeIndex():
             self.str_wareki = m_dir.group(1)
             self.str_seireki = m_dir.group(2)
             # test============================================
-            # if self.str_seireki != '2005':
+            # if self.str_seireki != '2026':
             #     continue
             # test============================================
             if int(self.str_seireki) != 2005:
@@ -351,11 +364,22 @@ class MakeIndex():
             self.p_suji = self.p_suji_2006
         else:
             self.p_suji = self.p_suji_2007e
+        if int(self.str_seireki) != 2026:
+            self.p_low = self.p_low_2026e
+        else:
+            self.p_low = self.p_low_2026
         for m_low in self.p_low.finditer(self.str_text):
             # 詳解、ページなどを目印に処理を開始
             # d.dprint(m_low.groups())
             # str_low : 所得税関係のその他の改正
-            self.str_low = m_low.group(4)
+            if int(self.str_seireki) != 2026:
+                self.str_low = m_low.group(4)
+            else:
+                self.str_low = m_low.group(6)
+                # 2026年　国際課税関係の改正　のため
+                if self.str_low == None:
+                    self.str_low = m_low.group(1)
+            
             if int(self.str_seireki) == 2005:
                 # 文字列内の空白を削除
                 self.str_low = self.str_low.replace(' ', '')
@@ -384,6 +408,10 @@ class MakeIndex():
                 else:
                     m_kansuji = self.p_kansuji.match(
                             self.str_text, self.offset)
+                    
+                    # if m_kansuji != None:
+                        # d.dprint(m_kansuji)
+                    
                     if m_kansuji:
                         self.make_kansuji(m_kansuji)
                     else:
@@ -513,7 +541,9 @@ class MakeIndex():
     def make_suji(self, m):
         self.offset = m.end()
         # 全角から半角に
+        # d.dprint(m.group(1))
         self.suji = (m.group(1).translate(self.trans_zenhan), m.group(2))
+        # d.dprint(self.suji)
         self.kakko = (' ', '')
         self.maru = (' ', '')
         self.make_page()
@@ -522,6 +552,7 @@ class MakeIndex():
         str_koumoku = m.group(2) + ''.join(list_koumoku)
         # 全角から半角に
         self.suji = (m.group(1).translate(self.trans_zenhan), str_koumoku)
+        # d.dprint(self.suji)
 
         data_tuple = (self.str_wareki, self.str_seireki,
                 self.str_low,
@@ -531,6 +562,7 @@ class MakeIndex():
                 self.kakko[0], self.kakko[1],
                 self.maru[0], self.maru[1],
                 self.num_page)
+        # d.dprint(data_tuple)
         if self.num_page != '':
             self.write_excel(data_tuple)
     
@@ -835,5 +867,6 @@ class MakeIndex():
                 self.write2text(f)
 
 if __name__ == "__main__":
-    make = MakeIndex(sys.argv[1:])
+    # make = MakeIndex(sys.argv[1:])
+    make = MakeIndex([r"C:\Users\sue-t\Documents\002_税務処理参考資料\税制改正の解説"])
     make.make_pdf_to_index()
